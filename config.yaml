@@ -1,0 +1,8 @@
+tenancyId: 
+authUserId: 
+keyFingerprint: 
+privateKeyPath: 
+fnApi: functions.us-phoenix-1.oraclecloud.com
+fnHost: us-phoenix-1.functions.oci.oraclecloud.com
+compartmentId: 
+appCode: <get from fn inspect app [appname]>
