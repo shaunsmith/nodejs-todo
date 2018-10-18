@@ -1,7 +1,7 @@
 tenancyId: 
 authUserId: 
 keyFingerprint: 
-privateKeyPath: 
+privateKeyPath: <this application does not support keys with a passphrase>
 fnApi: functions.us-phoenix-1.oraclecloud.com
 fnHost: us-phoenix-1.functions.oci.oraclecloud.com
 compartmentId: 
