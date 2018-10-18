@@ -1,12 +1,11 @@
 # nodejs-todo
 
-<h2> A simple To Do List application built with Node.js, Express, Oracle 
-Functions, and Oracle Caching Service.</h2>
+<h2> A simple To Do List application built with Node.js, Express, Oracle
+Functions, and Oracle Data Caching Cloud Service</h2>
 
 <p> It's a very simple Node.js application that let's you add and complete tasks
-on a single page, storing both new and completed task in an Oracle Caching
-Service Redis cache that is managed via a set of functions deployed on Oracle 
-Functions. </p>
+on a single page, storing both new and completed task in a Redis cache that is
+managed via a set of functions.</p>
 
 ![png](todo.png?raw=true 'web todo')
 
