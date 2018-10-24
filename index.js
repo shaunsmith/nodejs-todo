@@ -37,15 +37,20 @@ app.get("/", function(req, res) {
 //post route for adding new task 
 app.post("/addtask", function(req, res) {
     var newTask = req.body.newtask;
-    fn.invokeTrigger(context, "createtodo", newTask, function(todo) {
-        console.error(todo);
-        updateLists(function() {
-            res.redirect("/");
-        });
-    })
+    if ((newTask) && (newTask.length > 0)) {
+        fn.invokeTrigger(context, "createtodo", newTask, function(todo) {
+            console.error(todo);
+            updateLists(function() {
+                res.redirect("/");
+            });
+        })
+    } else {
+        // display error
+        console.error("Cannot create task with no title.");
+    }
 });
 
-app.post("/removetask", function(req, res) {
+app.post("/toggletask", function(req, res) {
     var taskToComplete = req.body.check;
     //check for the "typeof" the different completed task, then add into the complete task
     if (typeof taskToComplete === "string") {
@@ -58,7 +63,23 @@ app.post("/removetask", function(req, res) {
     });
 });
 
+app.post("/deletetask", function(req, res) {
+    var taskToDelete = req.body.check;
+    //check for the "typeof" the different completed task, then add into the complete task
+    if (typeof taskToDelete === "string") {
+        taskToDelete = [taskToDelete];
+    }
+    deleteTasks(taskToDelete, function() {
+        updateLists(function() {
+            res.redirect("/");
+        })
+    });
+});
+
 function makeTasksCompleted(taskTitles, callback) {
+    if (!taskTitles) {
+        return;
+    }
     if ((taskTitles.length == 0) && (callback)) {
         callback();
     } else {
@@ -73,6 +94,22 @@ function makeTasksCompleted(taskTitles, callback) {
     }
 }
 
+function deleteTasks(taskTitles, callback) {
+    if (!taskTitles) {
+        return;
+    }
+    if ((taskTitles.length == 0) && (callback)) {
+        callback();
+    } else {
+        var taskTitle = taskTitles.shift();
+        var payload = findIdOfTask(taskTitle, allRawTasks);
+        fn.invokeTrigger(context, "deletetodo", payload, function(response) {
+            console.error(response);
+            deleteTasks(taskTitles, callback);
+        })
+    }
+}
+
 
 
 function updateLists(callback) {
@@ -81,14 +118,16 @@ function updateLists(callback) {
         // [ { Todoid: '2', Title: 'From Node', Completed: 'false' },
         //   { Todoid: '1', Title: 'One Thing', Completed: 'false' } ] 
         var done = [], notdone = [];  
-        for (var i = 0; i < todos.length; i++) {
-            if (todos[i].Completed == 'false') {
-                notdone.push(todos[i].Title);
+        if (allRawTasks) {
+            for (var i = 0; i < todos.length; i++) {
+                if (todos[i].Completed == 'false') {
+                    notdone.push(todos[i].Title);
+                }
+                else {
+                    done.push(todos[i].Title);
+                }
             }
-            else {
-                done.push(todos[i].Title);
-            }
-        }
+         }
         pending.splice(0,pending.length)
         notdone.forEach(element => {
             pending.push(element)
@@ -97,6 +136,7 @@ function updateLists(callback) {
         done.forEach(element => {
             completed.push(element)
         });
+
         if (callback) {
             callback();
         }
@@ -104,10 +144,12 @@ function updateLists(callback) {
 }
 
 function findIdOfTask(title, rawTasks) {
-    for (let i = 0; i < rawTasks.length; i++) {
-        const rawTask = rawTasks[i];
-        if (rawTask.Title == title) {
-            return rawTask.Todoid;
+    if (rawTasks) {
+        for (let i = 0; i < rawTasks.length; i++) {
+            const rawTask = rawTasks[i];
+            if (rawTask.Title == title) {
+                return rawTask.Todoid;
+            }
         }
     }
     return null;

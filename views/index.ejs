@@ -15,20 +15,22 @@
 <button> Add Task </button>
 
 
-<h2> Added Task </h2>
+<h2> Pending Tasks </h2>
 
 <% for( var i = 0; i < incomplete.length; i++){ %>
     <li><input type="checkbox" name="check" value="<%= incomplete[i] %>" /> <%= incomplete[i] %> </li>
 <% } %>
+<br>
+<button formaction="/toggletask" type="submit" id="top"> Done </button>
 
-<button formaction="/removetask" type="submit" id="top"> Remove </button>
-</form>
-
-<h2> Completed task </h2>
+<h2> Completed Tasks </h2>
 
  <% for(var i = 0; i < completed.length; i++){ %>
-    <li><input type="checkbox" checked><%= completed[i] %> </li>
+    <li><input type="checkbox" name="check" value="<%= completed[i] %>" /> <%= completed[i] %> </li>
 <% } %>
+<br>
+<button formaction="/deletetask" type="submit" id="delete"> Delete </button>
+</form>
 
 </div>
 
