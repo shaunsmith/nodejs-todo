@@ -6,8 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Vanessa Ating",
-  "license": "ISC",
+  "author": "Shaun Smith",
+
+  "license": "Apache 2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shaunsmith/nodejs-todo.git"
+  },
   "dependencies": {
     "body-parser": "^1.18.0",
     "ejs": "^2.5.7",

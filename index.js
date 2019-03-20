@@ -6,18 +6,13 @@ var fs = require('fs');
 var fn = require('./fnclient.js');
 var yaml = require('yamljs');
 
-function loadPrivateKey(ctx) {
-  var keyPath = ctx.privateKeyPath;
-  if (keyPath.indexOf("~/") === 0) {
-    keyPath = keyPath.replace("~", os.homedir());
-  }
-  ctx.privateKey = fs.readFileSync(keyPath, 'ascii');
-}
 
 var context = yaml.load('config.yaml');
-loadPrivateKey(context);
-
-
+var keyPath = context.privateKeyPath;
+if (keyPath.indexOf("~/") === 0) {
+  keyPath = keyPath.replace("~", os.homedir());
+}
+context.privateKey = fs.readFileSync(keyPath, 'ascii');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -38,7 +33,7 @@ app.get("/", function(req, res) {
 app.post("/addtask", function(req, res) {
     var newTask = req.body.newtask;
     if ((newTask) && (newTask.length > 0)) {
-        fn.invokeTrigger(context, "createtodo", newTask, function(todo) {
+        fn.invokeFunction(context, process.env.createtodo, newTask, function(todo) {
             console.error(todo);
             updateLists(function() {
                 res.redirect("/");
@@ -87,7 +82,7 @@ function makeTasksCompleted(taskTitles, callback) {
         var id = findIdOfTask(taskTitle, allRawTasks);
         var payload = {todoid: id, completed: "true"};
         var jsonPayload = JSON.stringify(payload);
-        fn.invokeTrigger(context, "toggletodo", jsonPayload, function(response) {
+        fn.invokeFunction(context, process.env.toggletodo, jsonPayload, function(response) {
             console.error(response);
             makeTasksCompleted(taskTitles, callback);
         })
@@ -103,7 +98,7 @@ function deleteTasks(taskTitles, callback) {
     } else {
         var taskTitle = taskTitles.shift();
         var payload = findIdOfTask(taskTitle, allRawTasks);
-        fn.invokeTrigger(context, "deletetodo", payload, function(response) {
+        fn.invokeFunction(context, process.env.deletetodo, payload, function(response) {
             console.error(response);
             deleteTasks(taskTitles, callback);
         })
@@ -113,7 +108,7 @@ function deleteTasks(taskTitles, callback) {
 
 
 function updateLists(callback) {
-    fn.invokeTrigger(context, "gettodos", "", function (todos) {
+    fn.invokeFunction(context, process.env.gettodos, "", function (todos) {
         allRawTasks = todos;
         // [ { Todoid: '2', Title: 'From Node', Completed: 'false' },
         //   { Todoid: '1', Title: 'One Thing', Completed: 'false' } ] 

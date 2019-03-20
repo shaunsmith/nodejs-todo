@@ -1,0 +1,6 @@
+tenancyId: <ocid>
+compartmentId: <ocid>
+userId: <ocid>
+keyFingerprint: 
+privateKeyPath: <absolute path to pem keyfile>
+passphrase: <private key passphrase>

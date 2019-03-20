@@ -1,12 +1,16 @@
-//dependencies required for the app
-var https = require('https');
 var httpSignature = require('http-signature');
 var jsSHA = require("jssha");
+var sshpk = require('sshpk');
+const URL = require('url').URL;
+const https = require('https');
 
 // signing function as described at https://docs.cloud.oracle.com/Content/API/Concepts/signingrequests.htm
-function sign(request, options) {
+// BUT with 2 changes to support private keys encrypted with a passphrase
+sign = function (request, options) {
 
-    var apiKeyId = options.tenancyId + "/" + options.userId + "/" + options.keyFingerprint;
+    var keyId = options.tenancyId + "/" + options.userId + "/" + options.keyFingerprint;
+    // 1. Decrypt the private key using the passphrase
+    let key = sshpk.parsePrivateKey(options.privateKey, 'auto', { passphrase: options.passphrase });
 
     var headersToSign = [
         "host",
@@ -16,7 +20,7 @@ function sign(request, options) {
 
     var methodsThatRequireExtraHeaders = ["POST", "PUT"];
 
-    if(methodsThatRequireExtraHeaders.indexOf(request.method.toUpperCase()) !== -1) {
+    if (methodsThatRequireExtraHeaders.indexOf(request.method.toUpperCase()) !== -1) {
         options.body = options.body || "";
 
         var shaObj = new jsSHA("SHA-256", "TEXT");
@@ -33,8 +37,8 @@ function sign(request, options) {
     }
 
     httpSignature.sign(request, {
-        key: options.privateKey,
-        keyId: apiKeyId,
+        key: key.toBuffer('pem', {}), // 2. Format the decrypted Key as pem 
+        keyId: keyId,
         headers: headersToSign
     });
 
@@ -42,7 +46,7 @@ function sign(request, options) {
     request.setHeader("Authorization", newAuthHeaderValue);
 }
 
-// generates a function to handle the https.request response object
+// generates a function to handle the https.request response object (JSON string)
 function handleRequest(callback) {
 
     return function(response) {
@@ -58,52 +62,30 @@ function handleRequest(callback) {
     }
 }
 
-// gets the OCI user with the specified id
-exports.getApps = function(ctx, callback) {
+// Call the specified function invoke endpoint signing the request 
+exports.invokeFunction = function(ctx, functionInvokeURL, body, callback) {
+  const url = new URL(functionInvokeURL);
+  var options = {
+    host: url.hostname,
+    method: 'POST',
+    path: url.pathname,
+    headers: {
+      "opc-compartment-id": ctx.compartmentId,
+      "Content-Type": "application/text"
+    }
+  };
 
-    var options = {
-        host: ctx.fnApi,
-        path: "/v2/apps",
-        headers: {
-            "opc-compartment-id" : ctx.compartmentId
-        }
-    };
+  var request = https.request(options, handleRequest(callback));
 
-    var request = https.request(options, handleRequest(callback));
+  sign(request, {
+    body: body,
+    privateKey: ctx.privateKey,
+    keyFingerprint: ctx.keyFingerprint,
+    tenancyId: ctx.tenancyId,
+    userId: ctx.userId,
+    passphrase: ctx.passphrase
+  });
 
-    sign(request, {
-        privateKey: ctx.privateKey,
-        keyFingerprint: ctx.keyFingerprint,
-        tenancyId: ctx.tenancyId,
-        userId: ctx.authUserId
-    });
-
-    request.end();
-};
-
-// gets the OCI user with the specified id
-exports.invokeTrigger = function(ctx, triggerName, body, callback) {
-
-    var options = {
-        host: ctx.appCode + "." + ctx.fnHost,
-        method: 'POST',
-        path: "/t/" + triggerName,
-        headers: {
-            "opc-compartment-id" : ctx.compartmentId,
-            "Content-Type": "application/text",
-        }
-    };
-
-    var request = https.request(options, handleRequest(callback));
-
-    sign(request, {
-        body: body,
-        privateKey: ctx.privateKey,
-        keyFingerprint: ctx.keyFingerprint,
-        tenancyId: ctx.tenancyId,
-        userId: ctx.authUserId
-    });
-
-    request.write(body);
-    request.end();
+  request.write(body);
+  request.end();
 };
